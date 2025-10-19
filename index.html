@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSynth Strudel - Advanced Live Coding Studio</title>
+    <script src="https://unpkg.com/@strudel/web@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/line-awesome.min.css">
+    <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+    <div class="cyber-grid"></div>
+    <div class="container">
+        <header>
+            <h1><i class="las la-sliders-h"></i> CyberSynth Strudel</h1>
+            <p>Advanced Live Coding Music Studio</p>
+        </header>
+        <div class="status-bar">
+            <span>Status: <span id="audio-status"><i class="las la-volume-up"></i> Ready</span></span>
+        </div>
+        <div class="transport">
+            <button class="cyber-btn" id="play-btn" aria-label="Play or pause music"><i class="las la-play" style="font-size: 1.5rem;"></i> Play</button>
+            <button class="cyber-btn" id="stop-btn" aria-label="Stop playback"><i class="las la-stop" style="font-size: 1.5rem;"></i> Stop</button>
+            <button class="cyber-btn" id="undo-btn" aria-label="Undo last action"><i class="las la-undo" style="font-size: 1.5rem;"></i> Undo</button>
+            <button class="cyber-btn" id="redo-btn" aria-label="Redo last action"><i class="las la-redo" style="font-size: 1.5rem;"></i> Redo</button>
+        </div>
+        <div class="bpm-controls">
+            <div class="slider-container">
+                <label for="bpm">BPM</label>
+                <input type="range" id="bpm" min="60" max="200" value="120" step="1" aria-label="Beats per minute" aria-valuemin="60" aria-valuemax="200" aria-valuenow="120">
+                <div class="slider-value" id="bpm-value">120</div>
+            </div>
+            <div class="bpm-control">
+                <input type="checkbox" id="bpm-enable" checked aria-label="Enable BPM control">
+                <label for="bpm-enable">Enable BPM</label>
+            </div>
+            <div class="visualizer-controls">
+                <button class="cyber-btn" id="scope-btn" aria-label="Toggle scope visualizer"><i class="las la-chart-line"></i> Scope</button>
+                <button class="cyber-btn" id="spectrum-btn" aria-label="Toggle spectrum visualizer"><i class="las la-chart-area"></i> Spectrum</button>
+            </div>
+        </div>
+        <div class="main-grid">
+            <div class="panel sequencer-container">
+                <h2><i class="las la-music"></i> Advanced Sequencer</h2>
+                <div id="tracks-wrapper">
+                    <div class="track-container" id="bd-track">
+                        <div class="track-header">
+                            <span class="track-name">KICK</span>
+                            <div>
+                                <button class="cyber-btn" id="mute-bd" aria-label="Mute kick track"><i class="las la-volume-mute"></i> Mute</button>
+                                <button class="cyber-btn" id="solo-bd" aria-label="Solo kick track"><i class="las la-headphones"></i> Solo</button>
+                                <button class="cyber-btn" id="mix-bd" aria-label="Mix kick track"><i class="las la-random"></i> Mix</button>
+                            </div>
+                        </div>
+                        <div class="pattern-grid" id="bd-pattern"></div>
+                        <div class="track-controls">
+                            <select class="step-selector" id="bd-steps" aria-label="Select number of steps for kick">
+                                <option value="4">4 Steps</option>
+                                <option value="8" selected>8 Steps</option>
+                                <option value="16">16 Steps</option>
+                            </select>
+                            <select class="sound-selector" id="bd-sound" aria-label="Select sound for kick">
+                                <option value="bd" selected>Bass Drum</option>
+                                <option value="sd">Snare Drum</option>
+                                <option value="hh">Hi-Hat</option>
+                                <option value="cp">Clap</option>
+                                <option value="lt">Low Tom</option>
+                                <option value="mt">Mid Tom</option>
+                                <option value="ht">High Tom</option>
+                                <option value="jvbass">JV Bass</option>
+                                <option value="sawtooth">Sawtooth</option>
+                                <option value="sine">Sine</option>
+                                <option value="triangle">Triangle</option>
+                            </select>
+                            <button class="cyber-btn" id="random-bd" aria-label="Randomize kick track"><i class="las la-dice"></i> Randomize</button>
+                            <button class="cyber-btn" id="generate-bd" aria-label="Generate code for kick track"><i class="las la-code"></i> Generate</button>
+                        </div>
+                    </div>
+                    <div class="track-container" id="sd-track">
+                        <div class="track-header">
+                            <span class="track-name">SNARE</span>
+                            <div>
+                                <button class="cyber-btn" id="mute-sd" aria-label="Mute snare track"><i class="las la-volume-mute"></i> Mute</button>
+                                <button class="cyber-btn" id="solo-sd" aria-label="Solo snare track"><i class="las la-headphones"></i> Solo</button>
+                                <button class="cyber-btn" id="mix-sd" aria-label="Mix snare track"><i class="las la-random"></i> Mix</button>
+                            </div>
+                        </div>
+                        <div class="pattern-grid" id="sd-pattern"></div>
+                        <div class="track-controls">
+                            <select class="step-selector" id="sd-steps" aria-label="Select number of steps for snare">
+                                <option value="4">4 Steps</option>
+                                <option value="8" selected>8 Steps</option>
+                                <option value="16">16 Steps</option>
+                            </select>
+                            <select class="sound-selector" id="sd-sound" aria-label="Select sound for snare">
+                                <option value="bd">Bass Drum</option>
+                                <option value="sd" selected>Snare Drum</option>
+                                <option value="hh">Hi-Hat</option>
+                                <option value="cp">Clap</option>
+                                <option value="lt">Low Tom</option>
+                                <option value="mt">Mid Tom</option>
+                                <option value="ht">High Tom</option>
+                                <option value="jvbass">JV Bass</option>
+                                <option value="sawtooth">Sawtooth</option>
+                                <option value="sine">Sine</option>
+                                <option value="triangle">Triangle</option>
+                            </select>
+                            <button class="cyber-btn" id="random-sd" aria-label="Randomize snare track"><i class="las la-dice"></i> Randomize</button>
+                            <button class="cyber-btn" id="generate-sd" aria-label="Generate code for snare track"><i class="las la-code"></i> Generate</button>
+                        </div>
+                    </div>
+                    <div class="track-container" id="hh-track">
+                        <div class="track-header">
+                            <span class="track-name">HI-HAT</span>
+                            <div>
+                                <button class="cyber-btn" id="mute-hh" aria-label="Mute hi-hat track"><i class="las la-volume-mute"></i> Mute</button>
+                                <button class="cyber-btn" id="solo-hh" aria-label="Solo hi-hat track"><i class="las la-headphones"></i> Solo</button>
+                                <button class="cyber-btn" id="mix-hh" aria-label="Mix hi-hat track"><i class="las la-random"></i> Mix</button>
+                            </div>
+                        </div>
+                        <div class="pattern-grid" id="hh-pattern"></div>
+                        <div class="track-controls">
+                            <select class="step-selector" id="hh-steps" aria-label="Select number of steps for hi-hat">
+                                <option value="4">4 Steps</option>
+                                <option value="8" selected>8 Steps</option>
+                                <option value="16">16 Steps</option>
+                            </select>
+                            <select class="sound-selector" id="hh-sound" aria-label="Select sound for hi-hat">
+                                <option value="bd">Bass Drum</option>
+                                <option value="sd">Snare Drum</option>
+                                <option value="hh" selected>Hi-Hat</option>
+                                <option value="cp">Clap</option>
+                                <option value="lt">Low Tom</option>
+                                <option value="mt">Mid Tom</option>
+                                <option value="ht">High Tom</option>
+                                <option value="jvbass">JV Bass</option>
+                                <option value="sawtooth">Sawtooth</option>
+                                <option value="sine">Sine</option>
+                                <option value="triangle">Triangle</option>
+                            </select>
+                            <button class="cyber-btn" id="random-hh" aria-label="Randomize hi-hat track"><i class="las la-dice"></i> Randomize</button>
+                            <button class="cyber-btn" id="generate-hh" aria-label="Generate code for hi-hat track"><i class="las la-code"></i> Generate</button>
+                        </div>
+                    </div>
+                    <div class="track-container" id="cp-track">
+                        <div class="track-header">
+                            <span class="track-name">CLAP</span>
+                            <div>
+                                <button class="cyber-btn" id="mute-cp" aria-label="Mute clap track"><i class="las la-volume-mute"></i> Mute</button>
+                                <button class="cyber-btn" id="solo-cp" aria-label="Solo clap track"><i class="las la-headphones"></i> Solo</button>
+                                <button class="cyber-btn" id="mix-cp" aria-label="Mix clap track"><i class="las la-random"></i> Mix</button>
+                            </div>
+                        </div>
+                        <div class="pattern-grid" id="cp-pattern"></div>
+                        <div class="track-controls">
+                            <select class="step-selector" id="cp-steps" aria-label="Select number of steps for clap">
+                                <option value="4">4 Steps</option>
+                                <option value="8" selected>8 Steps</option>
+                                <option value="16">16 Steps</option>
+                            </select>
+                            <select class="sound-selector" id="cp-sound" aria-label="Select sound for clap">
+                                <option value="bd">Bass Drum</option>
+                                <option value="sd">Snare Drum</option>
+                                <option value="hh">Hi-Hat</option>
+                                <option value="cp" selected>Clap</option>
+                                <option value="lt">Low Tom</option>
+                                <option value="mt">Mid Tom</option>
+                                <option value="ht">High Tom</option>
+                                <option value="jvbass">JV Bass</option>
+                                <option value="sawtooth">Sawtooth</option>
+                                <option value="sine">Sine</option>
+                                <option value="triangle">Triangle</option>
+                            </select>
+                            <button class="cyber-btn" id="random-cp" aria-label="Randomize clap track"><i class="las la-dice"></i> Randomize</button>
+                            <button class="cyber-btn" id="generate-cp" aria-label="Generate code for clap track"><i class="las la-code"></i> Generate</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="code-controls">
+                    <button class="cyber-btn" id="add-track" aria-label="Add new track"><i class="las la-plus"></i> +</button>
+                    <button class="cyber-btn" id="remove-track" aria-label="Remove last track" style="display:none;"><i class="las la-minus"></i> -</button>
+                    <button class="cyber-btn" id="sequencer-random" aria-label="Randomize all sequencer tracks"><i class="las la-dice" style="font-size: 1.5rem;"></i> Randomize All</button>
+                    <button class="cyber-btn" id="sequencer-clear" aria-label="Clear all sequencer tracks"><i class="las la-broom"></i> Clear All</button>
+                    <button class="cyber-btn" id="sequencer-generate" aria-label="Generate code from all sequencer tracks"><i class="las la-code"></i> Generate All</button>
+                </div>
+            </div>
+            <div class="panel code-editor-panel">
+                <h2><i class="las la-terminal"></i> Live Code Editor</h2>
+                <textarea id="code-editor" class="code-editor" spellcheck="false" aria-label="Live code editor for music patterns" placeholder="// Write Strudel code, e.g.:
+s('bd*2, hh(3,8)').jux(rev)
+note('c3 eb3 g3').sound('sawtooth').lpf(800)"></textarea>
+                <div class="code-controls">
+                    <div>
+                        <button class="cyber-btn" id="evaluate-btn" aria-label="Evaluate code"><i class="las la-play" style="font-size: 1.5rem;"></i> Evaluate</button>
+                        <button class="cyber-btn" id="stop-code-btn" aria-label="Stop code playback"><i class="las la-stop" style="font-size: 1.5rem;"></i> Stop</button>
+                        <button class="cyber-btn" id="clear-code-btn" aria-label="Clear code editor"><i class="las la-broom"></i> Clear</button>
+                    </div>
+                    <div>
+                        <button class="cyber-btn" id="save-code-btn" aria-label="Save code"><i class="las la-save"></i> Save</button>
+                        <button class="cyber-btn" id="load-code-btn" aria-label="Load code"><i class="las la-folder-open"></i> Load</button>
+                    </div>
+                </div>
+            <div class="panel code-editor-panel" >
+                <h2><i class="las la-database"></i> Pattern Bank</h2>
+                <div style="margin-bottom: clamp(15px, 1vw, 10px); margin-top: 25px;">
+                    <input type="text" id="pattern-name" placeholder="Pattern Name..." style="background: rgba(0,0,0,0.8); color: var(--primary-cyan); border: 1px solid var(--primary-cyan); padding: clamp(6px, 1.5vw, 8px); width: 100%; font-size: clamp(0.8rem, 2vw, 0.9rem); margin-bottom: clamp(15px, 1vw, 10px)" aria-label="Pattern name input">
+                    <button class="cyber-btn" id="save-pattern-btn" aria-label="Save pattern"><i class="las la-save" style="font-size: 1.5rem;"></i> Save Pattern</button>
+                </div>
+                <div id="pattern-bank" style="max-height: clamp(300px, 50vh, 350px); overflow-y: auto;"></div>
+                <div style="margin-top: clamp(5px, 1vw, 10px);">
+                    <button class="cyber-btn" id="export-patterns-btn" aria-label="Export all patterns"><i class="las la-file-export"></i> Export All</button>
+                    <button class="cyber-btn" id="import-patterns-btn" aria-label="Import patterns"><i class="las la-file-import"></i> Import</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;" aria-label="Import pattern file">
+                </div>
+            </div>                
+            </div>
+            <div class="panel code-editor-panel">
+                <h2><i class="las la-random"></i> Pattern Mix</h2>
+                <div class="mix-checkboxes" id="mix-checkboxes"></div>
+                <div class="code-controls">
+                    <button class="cyber-btn" id="mix-combine" aria-label="Combine selected patterns"><i class="las la-layer-group"></i> Combine (Stack)</button>
+                    <button class="cyber-btn" id="mix-random" aria-label="Select 3 random patterns"><i class="las la-dice-three"></i> Random 3</button>
+                </div>
+            </div>            
+           
+
+            <div class="panel">
+                <h2><i class="las la-sliders-h"></i> Synth Controls</h2>
+                <div class="synth-controls">
+                    <div class="control-group">
+                        <h3>Filter</h3>
+                        <div class="slider-container">
+                            <label for="lpf-freq">LPF (Hz)</label>
+                            <input type="range" id="lpf-freq" min="100" max="10000" value="800" step="100" aria-label="Low-pass filter frequency" aria-valuemin="100" aria-valuemax="10000" aria-valuenow="800">
+                            <div class="slider-value" id="lpf-freq-value">800 Hz</div>
+                        </div>
+                        <div class="slider-container">
+                            <label for="lpq">LPQ</label>
+                            <input type="range" id="lpq" min="0" max="10" value="1" step="0.1" aria-label="Low-pass filter resonance" aria-valuemin="0" aria-valuemax="10" aria-valuenow="1">
+                            <div class="slider-value" id="lpq-value">1.0</div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h3>Effects</h3>
+                        <div class="slider-container">
+                            <label for="room">ROOM (Reverb)</label>
+                            <input type="range" id="room" min="0" max="1" value="0.5" step="0.1" aria-label="Reverb room size" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0.5">
+                            <div class="slider-value" id="room-value">0.5</div>
+                        </div>
+                        <div class="slider-container">
+                            <label for="delay">DELAY</label>
+                            <input type="range" id="delay" min="0" max="1" value="0.3" step="0.1" aria-label="Delay amount" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0.3">
+                            <div class="slider-value" id="delay-value">0.3</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="cyber-btn" id="mix-synth" aria-label="mix-synth"><i class="las la-random"></i> Mix</button>
+                <button class="cyber-btn" id="apply-synth" aria-label="Apply synth parameters to code"><i class="las la-check"></i> Apply to Code</button>
+           
+            </div>
+
+            <div class="panel">
+                <h2><i class="las la-bookmark"></i> Presets</h2>
+                <div class="presets-grid">
+                    <button class="cyber-btn" id="preset-a" aria-label="Load preset A: Bass Drum"><i class="las la-drum"></i> A: Bass Drum</button>
+                    <button class="cyber-btn" id="preset-b" aria-label="Load preset B: Double Beat"><i class="las la-drum"></i> B: Double Beat</button>
+                    <button class="cyber-btn" id="preset-c" aria-label="Load preset C: With Snare"><i class="las la-drum"></i> C: With Snare</button>
+                    <button class="cyber-btn" id="preset-d" aria-label="Load preset D: Melody"><i class="las la-music"></i> D: Melody</button>
+                    <button class="cyber-btn" id="preset-e" aria-label="Load preset E: Hats"><i class="las la-drum"></i> E: Hats</button>
+                    <button class="cyber-btn" id="preset-f" aria-label="Load preset F: Combined"><i class="las la-layer-group"></i> F: Combined</button>
+                    <button class="cyber-btn" id="preset-g" aria-label="Load preset G: Bass Line"><i class="las la-drum"></i> G: Bass Line</button>
+                    <button class="cyber-btn" id="preset-h" aria-label="Load preset H: Percussion"><i class="las la-drum"></i> H: Percussion</button>
+                    <button class="cyber-btn" id="preset-i" aria-label="Load preset I: Arpeggio"><i class="las la-music"></i> I: Arpeggio</button>
+                    <button class="cyber-btn" id="preset-j" aria-label="Load preset J: Effects"><i class="las la-sliders-h"></i> J: Effects</button>
+                    <button class="cyber-btn" id="preset-k" aria-label="Load preset K: Synth Wave"><i class="las la-wave-square"></i> K: Synth Wave</button>
+                    <button class="cyber-btn" id="preset-l" aria-label="Load preset L: Electronic Drum"><i class="las la-drum"></i> L: Electronic Drum</button>
+                </div>
+            </div>                
+            </div>
+            </div>
+        </div>
+        <div id="notification" class="notification">
+            <span id="notification-text">Ready to create music!</span>
+        </div>
+        <footer>
+            <p>
+                <i class="las la-code-branch"></i> ساخته شده با عشق به موسیقی
+                <br>
+                <a href="./tutorial.html" target="_blank">Tutorial</a> |
+                <a href="#" target="_blank">GitHub</a>
+            </p>
+        </footer>
+    </div>
+    <script src="./assets/js/main.js"></script>    <script></script>
+</body>
+</html>
