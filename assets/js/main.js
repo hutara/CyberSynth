@@ -613,7 +613,7 @@ class CyberStrudel {
     }
 
     async generateAIPattern() {
-        const API_KEY = "AIzaSyDuQ3d-5y8WyaN_OY6c8U9CufzVApa75ko"; 
+        //const API_KEY = "api key"; 
 
         const promptInput = document.getElementById('ai-prompt');
         const codeEditor = document.getElementById('code-editor');
@@ -1822,4 +1822,5 @@ class CyberStrudel {
     }
 }
 const app = new CyberStrudel();
+
 
