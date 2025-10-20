@@ -26,6 +26,11 @@ class CyberStrudel {
             bpm: 120,
             bpmEnabled: true
         };
+        // MIDI runtime state
+        this.midiAccess = null;
+        this.midiOutputs = [];
+        this.midiOutput = null; // selected MIDIOutput
+        this.midiEnabled = false;
         this.mixedPatterns = {
             presets: {},
             tracks: {},
@@ -497,6 +502,11 @@ class CyberStrudel {
             this.saveToHistory();
             this.saveToLocalStorage();
         }, 500));
+        
+        // AI Generator Button Listener
+        const generateAiBtn = document.getElementById('generate-ai-btn');
+        if (generateAiBtn) generateAiBtn.addEventListener('click', () => this.generateAIPattern());
+
         this.getTracks().forEach(track => this.setupTrackListeners(track));
         const addTrackBtn = document.getElementById('add-track');
         if (addTrackBtn) addTrackBtn.addEventListener('click', () => this.addTrack());
@@ -540,9 +550,10 @@ class CyberStrudel {
                 if (valueEl) valueEl.textContent = this.synthParams.bpm;
                 slider.setAttribute('aria-valuenow', this.synthParams.bpm);
                 this.saveToLocalStorage();
-                // Always update code when BPM changes
-                this.updateMixedCode();
-                this.showNotification(`BPM set to ${this.synthParams.bpm}`, 'success');
+                if (this.synthParams.bpmEnabled) {
+                    this.updateMixedCode();
+                    this.showNotification(`BPM set to ${this.synthParams.bpm}`, 'success');
+                }
             }, 100));
         };
         updateBpmSlider();
@@ -600,6 +611,87 @@ class CyberStrudel {
             this.importPatterns(e);
         });
     }
+
+    async generateAIPattern() {
+        const API_KEY = "AIzaSyDuQ3d-5y8WyaN_OY6c8U9CufzVApa75ko"; 
+
+        const promptInput = document.getElementById('ai-prompt');
+        const codeEditor = document.getElementById('code-editor');
+        const generateBtn = document.getElementById('generate-ai-btn');
+
+        if (!promptInput || !codeEditor || !generateBtn) {
+            this.showNotification('UI elements for AI generator not found.', 'error');
+            return;
+        }
+
+        const userQuery = promptInput.value.trim();
+        if (!userQuery) {
+            this.showNotification('لطفا ایده خود را برای ساخت الگو وارد کنید.', 'error');
+            return;
+        }
+
+        generateBtn.innerHTML = '<i class="las la-spinner la-spin"></i> در حال ساخت...';
+        generateBtn.disabled = true;
+
+        const systemPrompt = `Generate a COMPLETE, EXECUTABLE Strudel REPL code snippet for: "${prompt}".
+        - Output ONLY the pure code – NO explanations, comments, or markdown.
+        - Use JS functions: s('mini-notation for sounds'), note('notes in mini-notation').scale('C:minor'), stack() for layers.
+        - Include effects: .lpf(200-5000), .room(0-1), .delay(0-1).
+        - Sync tempo: setcps(${this.synthParams.bpm / 60 / 4}).
+        - Mini-notation rules: * for repeat (bd*4), / for slow ([c3 eb3]/2), ~ for rest, [ ] for groups, < > for choice, (n,k) for Euclidean (bd(3,8)), @ for elongate.
+        - Examples:
+        - Drum beat: stack( s('bd*4, sd(2,8)'), s('hh*8') ).lpf(800).room(0.5)
+        - Melody: note('c3 eb3 g3 bb3').sound('sawtooth').delay(0.3)
+        - Full techno: setCps(120/60/4); stack( s('bd*4'), note('c2*2 eb2 g2').sound('bass').lpf(200), s('hh(5,8)') ).room(0.4)
+
+        - User: a basic house beat
+        - Assistant: stack(s('bd*4'), s('~ sd').e(2,4), s('hh*8').gain(0.6))
+
+        **BAD EXAMPLE (Do NOT do this):**
+        - note('c4 eb4 g4 bb4').scale('minor').sound('sine').slow(2).room(0.8).delay(0.2).
+
+
+        Your code must run error-free in Strudel REPL.`;
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+        const payload = {
+            contents: [{ parts: [{ text: userQuery }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+        };
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || `API request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                let generatedCode = candidate.content.parts[0].text;
+                generatedCode = generatedCode.replace(/```javascript|```/g, "").trim();
+                codeEditor.value = generatedCode;
+                this.showNotification('الگوی جدید با موفقیت ساخته شد!', 'success');
+                this.evaluateCode();
+            } else {
+                throw new Error('پاسخ نامعتبر از هوش مصنوعی دریافت شد.');
+            }
+        } catch (error) {
+            console.error('AI Generation Error:', error);
+            this.showNotification(`خطا در ساخت الگو: ${error.message}`, 'error');
+        } finally {
+            generateBtn.innerHTML = '<i class="las la-magic"></i> ساخت الگو';
+            generateBtn.disabled = false;
+        }
+    }
+
 
     toggleVisualizer(type) {
         const codeEl = document.getElementById('code-editor');
@@ -659,7 +751,9 @@ class CyberStrudel {
 .sometimes(add(note(12)))
 .stack(s("bd*2").bank('RolandTR909'))
 .gain(.5).fast(2)`,
-            e: `s("hh*8").gain(".4!2 1 .4!2 1 .4 1").fast(2).gain(0.8)`,
+            e: `s("hh*8").gain(".4!2 1 .4!2 1 .4 1").fast(2).layer(
+  x => x.degrade().pan(0),
+  x => x.undegrade().pan(1))`,
             f: `n("<-4,0 5 2 1>*<2!3 4>")
 .scale("<C F>/8:pentatonic")
 .s("sine")
@@ -701,7 +795,7 @@ class CyberStrudel {
             div.innerHTML = `
                 <label for="mix-${key}">${key.toUpperCase()}: Pattern ${key}</label>
                 <input type="checkbox" id="mix-${key}" aria-label="Select pattern ${key} for combining">
-                <button class="cyber-btn" id="mix-preset-${key}" aria-label="Mix preset ${key} to code"><i class="las la-random"></i> Mix</button>
+                <button class="cyber-btn" id="mix-preset-${key}" aria-label="Mix preset ${key} to code"><i class="las la-random" style="font-size: 1rem;"></i> </button>
             `;
             container.appendChild(div);
             const chk = document.getElementById(`mix-${key}`);
@@ -811,8 +905,8 @@ class CyberStrudel {
     }
 
     updateMixedCode() {
-        let allPatterns = [];
-
+        const patterns = [];
+        
         // First handle track patterns
         this.getTracks().forEach(track => {
             if (this.mixedPatterns.tracks[track]) {
@@ -826,7 +920,7 @@ class CyberStrudel {
                     const code = ['sawtooth', 'sine', 'triangle'].includes(sound)
                         ? `note('c3').sound('${sound}').struct("${steps}").gain(0.8)`
                         : `s("${sound}*${stepCount}").struct("${steps}").gain(0.8)`;
-                    allPatterns.push(code);
+                    patterns.push(code);
                 }
             }
         });
@@ -834,40 +928,39 @@ class CyberStrudel {
         // Then handle preset patterns
         Object.keys(this.mixedPatterns.presets).forEach(key => {
             if (this.mixedPatterns.presets[key]) {
-                allPatterns.push(this.presets[key]);
+                patterns.push(this.presets[key]);
             }
         });
 
-        // Finally handle saved patterns
+        // Finally handle saved patterns - using their exact saved code
         Object.keys(this.mixedPatterns.saved).forEach(name => {
             if (this.mixedPatterns.saved[name]) {
                 const pattern = this.savedPatterns.get(name);
                 if (pattern && pattern.code) {
-                    allPatterns.push(pattern.code);
+                    // Use the exact saved pattern code without modification
+                    patterns.push(pattern.code);
                 }
             }
         });
 
-        // Remove any empty patterns and duplicates
-        allPatterns = allPatterns.filter(p => p && p.trim())
-            .filter((p, index, self) => self.indexOf(p) === index);
-
         // Combine all patterns
-        let newCode = '';
-        if (allPatterns.length === 1) {
-            newCode = allPatterns[0];
-        } else if (allPatterns.length > 1) {
-            newCode = `stack(${allPatterns.join(',\n  ')})`;
+        let newCode;
+        if (patterns.length === 1) {
+            // If there's only one pattern, don't wrap it in stack()
+            newCode = patterns[0];
+        } else if (patterns.length > 1) {
+            newCode = `stack(${patterns.join(', ')})`;
+        } else {
+            newCode = '';
         }
 
-        // Always add BPM if enabled and there is code
-        if (this.synthParams.bpmEnabled && newCode) {
+        // Add BPM if enabled
+        if (this.synthParams.bpmEnabled && patterns.length > 0) {
             newCode = `setCps(${this.synthParams.bpm}/60/4)\n${newCode}`;
         }
 
         const codeEditor = document.getElementById('code-editor');
         if (codeEditor) codeEditor.value = newCode;
-
         if (newCode && this.isPlaying) {
             this.evaluateCode();
         } else if (!newCode) {
@@ -1269,13 +1362,11 @@ class CyberStrudel {
             this.showNotification('Code editor not found', 'error');
             return;
         }
-        let code = codeEditor.value.trim();
+        const code = codeEditor.value.trim();
         if (!code) {
             this.showNotification('No code to save', 'error');
             return;
         }
-        // Remove setCps (BPM) from code before saving
-        code = code.replace(/setCps\([^)]+\)\n?/g, '');
         this.savedPatterns.set(name, {
             code,
             sequencerState: JSON.parse(JSON.stringify(this.sequencerState)),
@@ -1731,3 +1822,4 @@ class CyberStrudel {
     }
 }
 const app = new CyberStrudel();
+
