@@ -218,6 +218,22 @@
         .tip strong {
             color: var(--primary-cyan);
         }
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: var(--panel-bg);
+            border-top: 2px solid var(--primary-cyan);
+            margin-top: 50px;
+            border-radius: 15px 15px 0 0;
+        }
+        footer a {
+            color: var(--primary-cyan);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        footer a:hover {
+            color: var(--accent-yellow);
+        }        
 
     </style>
 </head>
@@ -329,6 +345,15 @@ s("bd*4").lpf(800).room(0.5).delay(0.25)</code>
                          data-fa="`.lpf(800)` فرکانس‌های بالای ۸۰۰ هرتز را حذف می‌کند. `.room(0.5)` ریورب (فضا) اضافه می‌کند. `.delay(0.25)` اکو اضافه می‌کند.">
                         `.lpf(800)` cuts high frequencies above 800Hz. `.room(0.5)` adds reverb (space). `.delay(0.25)` adds echoes.
                     </div>
+                    <footer>
+                        <p>
+                            <i class="las la-code-branch"></i> ساخته شده با عشق به موسیقی
+                            <br>
+                            <a href="./index.html" target="_blank">CyberSynth</a>   |
+                            <a href="./tutorial1.html" target="_blank">More Samples</a>  |
+                            <a href="https://github.com/tidalcycles/strudel" target="_blank">GitHub</a>
+                        </p>
+                    </footer>                    
                 </div>
             </section>
         </main>
