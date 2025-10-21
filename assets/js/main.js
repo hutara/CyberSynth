@@ -631,7 +631,7 @@ class CyberStrudel {
         generateBtn.innerHTML = '<i class="las la-spinner la-spin"></i> در حال ساخت...';
         generateBtn.disabled = true;
 
-        const PROXY_URL = 'https://script.google.com/macros/s/AKfycbzKVEnwyCriUPKwHrshVbbKaUIP-tNW5K8vai_p717HcGKh7X-e0SbKiFCBSFmZUt1A/exec';
+        const PROXY_URL = 'https://script.google.com/macros/s/AKfycbyMEh_nGVLUzNLX4M_lckRUO6m7T_1KAtfIDYKaD0FIe_Ay0VRa9BDmm94jl5Z8GB0L/exec';
 
         const payload = {
             contents: [{ parts: [{ text: userQuery }] }],
@@ -1820,4 +1820,5 @@ class CyberStrudel {
     }
 }
 const app = new CyberStrudel();
+
 
