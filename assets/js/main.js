@@ -613,7 +613,7 @@ class CyberStrudel {
     }
 
     async generateAIPattern() {
-        const API_KEY = "AIzaSyDuQ3d-5y8WyaN_OY6c8U9CufzVApa75ko"; 
+      
 
         const promptInput = document.getElementById('ai-prompt');
         const codeEditor = document.getElementById('code-editor');
@@ -633,7 +633,7 @@ class CyberStrudel {
         generateBtn.innerHTML = '<i class="las la-spinner la-spin"></i> در حال ساخت...';
         generateBtn.disabled = true;
 
-        const systemPrompt = `Generate a COMPLETE, EXECUTABLE Strudel REPL code snippet for: "${prompt}".
+        const systemPrompt = `Generate a COMPLETE, EXECUTABLE Strudel REPL code snippet for: "${userQuery}".
         - Output ONLY the pure code – NO explanations, comments, or markdown.
         - Use JS functions: s('mini-notation for sounds'), note('notes in mini-notation').scale('C:minor'), stack() for layers.
         - Include effects: .lpf(200-5000), .room(0-1), .delay(0-1).
@@ -650,38 +650,36 @@ class CyberStrudel {
         **BAD EXAMPLE (Do NOT do this):**
         - note('c4 eb4 g4 bb4').scale('minor').sound('sine').slow(2).room(0.8).delay(0.2).
 
-
         Your code must run error-free in Strudel REPL.`;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+        const workerUrl = 'https://geminiapikey.hutaraa.workers.dev'; // جایگزین با URL واقعی Worker
+
         const payload = {
             contents: [{ parts: [{ text: userQuery }] }],
             systemInstruction: { parts: [{ text: systemPrompt }] },
         };
 
         try {
-            const response = await fetch(apiUrl, {
+            const response = await fetch(workerUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ prompt: userQuery, bpm: this.synthParams.bpm })
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error.message || `API request failed with status ${response.status}`);
+                throw new Error(errorData.error || `Worker request failed with status ${response.status}`);
             }
 
             const result = await response.json();
-            const candidate = result.candidates?.[0];
-
-            if (candidate && candidate.content?.parts?.[0]?.text) {
-                let generatedCode = candidate.content.parts[0].text;
+            if (result.code) {
+                let generatedCode = result.code;
                 generatedCode = generatedCode.replace(/```javascript|```/g, "").trim();
                 codeEditor.value = generatedCode;
                 this.showNotification('الگوی جدید با موفقیت ساخته شد!', 'success');
                 this.evaluateCode();
             } else {
-                throw new Error('پاسخ نامعتبر از هوش مصنوعی دریافت شد.');
+                throw new Error('پاسخ نامعتبر از Worker دریافت شد.');
             }
         } catch (error) {
             console.error('AI Generation Error:', error);
