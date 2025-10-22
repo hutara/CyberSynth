@@ -904,8 +904,8 @@ class CyberStrudel {
 
     updateMixedCode() {
         const patterns = [];
-        
-        // First handle track patterns
+
+        // === 1️⃣ Handle active sequencer tracks ===
         this.getTracks().forEach(track => {
             if (this.mixedPatterns.tracks[track]) {
                 if (this.trackStates[track].muted || (Object.values(this.trackStates).some(state => state.solo) && !this.trackStates[track].solo)) {
@@ -923,42 +923,57 @@ class CyberStrudel {
             }
         });
 
-        // Then handle preset patterns
+        // === 2️⃣ Handle preset patterns ===
         Object.keys(this.mixedPatterns.presets).forEach(key => {
             if (this.mixedPatterns.presets[key]) {
-                patterns.push(this.presets[key]);
+                // Clean preset code before pushing
+                let cleanPreset = this.presets[key]
+                    .replace(/setCps\s*\([^)]*\)\s*;?/gi, '')
+                    .replace(/\bstack\s*\(([\s\S]*)\)/gi, '$1')
+                    .replace(/\n+/g, ' ')
+                    .trim();
+                patterns.push(cleanPreset);
             }
         });
 
-        // Finally handle saved patterns - using their exact saved code
+        // === 3️⃣ Handle saved (user) patterns safely ===
         Object.keys(this.mixedPatterns.saved).forEach(name => {
             if (this.mixedPatterns.saved[name]) {
                 const pattern = this.savedPatterns.get(name);
                 if (pattern && pattern.code) {
-                    // Use the exact saved pattern code without modification
-                    patterns.push(pattern.code);
+                    // Normalize saved pattern code: remove BPM and nested stacks
+                    let cleanCode = pattern.code
+                        .replace(/setCps\s*\([^)]*\)\s*;?/gi, '')  // remove setCps
+                        .replace(/\bstack\s*\(([\s\S]*)\)/gi, '$1') // unwrap stack()
+                        .replace(/\n+/g, ' ')                       // flatten multiline
+                        .replace(/\s{2,}/g, ' ')                    // normalize spaces
+                        .trim();
+
+                    // Clean up redundant commas or trailing punctuation
+                    cleanCode = cleanCode.replace(/,\s*,/g, ',').replace(/,+\s*$/, '');
+
+                    if (cleanCode) patterns.push(cleanCode);
                 }
             }
         });
 
-        // Combine all patterns
-        let newCode;
+        // === 4️⃣ Combine all patterns in a clean Strudel-compatible structure ===
+        let newCode = '';
         if (patterns.length === 1) {
-            // If there's only one pattern, don't wrap it in stack()
             newCode = patterns[0];
         } else if (patterns.length > 1) {
             newCode = `stack(${patterns.join(', ')})`;
-        } else {
-            newCode = '';
         }
 
-        // Add BPM if enabled
+        // === 5️⃣ Add BPM once, globally ===
         if (this.synthParams.bpmEnabled && patterns.length > 0) {
             newCode = `setCps(${this.synthParams.bpm}/60/4)\n${newCode}`;
         }
 
+        // === 6️⃣ Update code editor & playback ===
         const codeEditor = document.getElementById('code-editor');
         if (codeEditor) codeEditor.value = newCode;
+
         if (newCode && this.isPlaying) {
             this.evaluateCode();
         } else if (!newCode) {
@@ -1446,9 +1461,10 @@ class CyberStrudel {
 
         // Don't modify the sequencer state when mixing
         // Just update the mixed code to include or remove this pattern
-        this.updateMixedCode();
         this.saveToHistory();
         this.saveToLocalStorage();
+        this.updatePatternBankUI(); // اضافه شد
+        this.updateMixedCode();     // اضافه شد
         this.showNotification(`Saved pattern "${name}" ${this.mixedPatterns.saved[name] ? 'mixed' : 'removed'}`, 'success');
     }
 
