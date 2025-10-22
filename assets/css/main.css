@@ -367,7 +367,6 @@ footer a:hover {
     padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 15px);
     border-radius: 8px;
     box-shadow: var(--glow-cyan);
-    transform: translateX(120%);
     transition: transform 0.3s ease;
     font-size: clamp(0.8rem, 2vw, 0.9rem);
 }
@@ -466,4 +465,5 @@ footer a:hover {
         width: 100%;
         justify-content: flex-start;
     }
+
 }
