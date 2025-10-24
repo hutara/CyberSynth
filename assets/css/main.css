@@ -1,6 +1,7 @@
 :root {
     --primary-cyan: #00ffff;
-    --secondary-magenta: #ff00ff;
+    --secondary-cyan: #00ccff;
+    --secondary-magenta: #ff3bff;
     --accent-yellow: #ffff00;
     --background-dark: #0a0a1a;
     --grid-color: #1a2a4a;
@@ -153,15 +154,22 @@ header p {
     gap: clamp(5px, 1vw, 10px);
     margin-top: clamp(5px, 1vw, 10px);
 }
-.transport {
+.floating-nav-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
-    gap: clamp(5px, 1vw, 10px);
+    gap: clamp(10px, 2vw, 15px);
     padding: clamp(10px, 2vw, 15px);
-    background: rgba(0,0,0,0.5);
+    background: var(--panel-bg);
+    border: 2px solid var(--primary-cyan);
     border-radius: 10px;
-    margin: clamp(10px, 2vw, 15px) 0;
+    box-shadow: var(--glow-cyan);
+    z-index: 1000;
+    opacity: 80%;
+    backdrop-filter: blur(10px);
 }
 .bpm-controls {
     display: flex;
@@ -336,6 +344,7 @@ footer {
     background: var(--panel-bg);
     border-top: 2px solid var(--primary-cyan);
     margin-top: 50px;
+    padding-bottom: 105px;
     border-radius: 15px 15px 0 0;
 }
 footer a {
@@ -360,8 +369,10 @@ footer a:hover {
 }
 .notification {
     position: fixed;
-    top: clamp(10px, 2vw, 20px);
-    right: clamp(10px, 2vw, 20px);
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
     background: var(--panel-bg);
     border: 2px solid var(--primary-cyan);
     padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 15px);
@@ -412,9 +423,19 @@ footer a:hover {
     .visualizer-controls {
         justify-content: center;
     }
-    .transport {
-        flex-direction: column;
+    .floating-nav-bar {
+        flex-direction: row;
+        justify-content: space-around;
         align-items: center;
+        width: calc(100vw - 40px);
+        max-width: none;
+        gap: clamp(5px, 1.5vw, 8px);
+        padding: clamp(8px, 1.5vw, 12px);
+    }
+    .cyber-btn {
+        padding: clamp(6px, 1.2vw, 8px) clamp(8px, 1.5vw, 12px);
+        font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+        min-width: 60px;
     }
     .checkbox-item div {
         flex-wrap: wrap;
@@ -452,9 +473,13 @@ footer a:hover {
         align-items: flex-start;
     }
     .visualizer-controls {
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-around;
         align-items: center;
-        gap: 5px;
+        width: calc(100vw - 40px);
+        max-width: none;
+        gap: clamp(5px, 1.5vw, 8px);
+        padding: clamp(8px, 1.5vw, 12px);
     }
     .checkbox-item {
         flex-direction: column;
@@ -465,5 +490,30 @@ footer a:hover {
         width: 100%;
         justify-content: flex-start;
     }
-
+    .floating-nav-bar {
+        width: calc(100vw - 20px);
+        padding: clamp(6px, 1.2vw, 10px);
+        bottom: 10px;
+        gap: clamp(3px, 1vw, 5px);
+        
+    }
+    .cyber-btn {
+        padding: clamp(5px, 1vw, 6px) clamp(6px, 1.2vw, 8px);
+        font-size: clamp(0.6rem, 1.6vw, 0.7rem);
+        min-width: 50px;
+    }
+}
+/* ... استایل‌های موجود ... */
+select#midi-output {
+    background: rgba(0,0,0,0.8);
+    color: var(--primary-cyan);
+    border: 1px solid var(--primary-cyan);
+    padding: clamp(5px, 1vw, 8px);
+    border-radius: 5px;
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+}
+select#midi-output:focus {
+    outline: 2px solid var(--accent-yellow);
+    outline-offset: 2px;
 }
