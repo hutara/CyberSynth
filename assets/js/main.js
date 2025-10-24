@@ -613,76 +613,76 @@ class CyberStrudel {
     }
 
     async generateAIPattern() {
+      
+
         const promptInput = document.getElementById('ai-prompt');
         const codeEditor = document.getElementById('code-editor');
         const generateBtn = document.getElementById('generate-ai-btn');
 
         if (!promptInput || !codeEditor || !generateBtn) {
-            this.showNotification('عناصر رابط کاربری برای تولید AI یافت نشد.', 'error');
+            this.showNotification('UI elements for AI generator not found.', 'error');
             return;
         }
 
         const userQuery = promptInput.value.trim();
         if (!userQuery) {
-            this.showNotification('لطفاً ایده خود را برای ساخت الگو وارد کنید.', 'error');
+            this.showNotification('لطفا ایده خود را برای ساخت الگو وارد کنید.', 'error');
             return;
         }
 
         generateBtn.innerHTML = '<i class="las la-spinner la-spin"></i> در حال ساخت...';
         generateBtn.disabled = true;
 
-        const PROXY_URL = 'https://script.google.com/macros/s/AKfycbw163NpYvpd6ESxjtJBh8UxsxbZal_kooMQJJxXxwZHxYcT3m4O6gZ57CCqZB_QmTk2/exec';
+        const systemPrompt = `Generate a COMPLETE, EXECUTABLE Strudel REPL code snippet for: "${userQuery}".
+        - Output ONLY the pure code – NO explanations, comments, or markdown.
+        - Use JS functions: s('mini-notation for sounds'), note('notes in mini-notation').scale('C:minor'), stack() for layers.
+        - Include effects: .lpf(200-5000), .room(0-1), .delay(0-1).
+        - Sync tempo: setcps(${this.synthParams.bpm / 60 / 4}).
+        - Mini-notation rules: * for repeat (bd*4), / for slow ([c3 eb3]/2), ~ for rest, [ ] for groups, < > for choice, (n,k) for Euclidean (bd(3,8)), @ for elongate.
+        - Examples:
+        - Drum beat: stack( s('bd*4, sd(2,8)'), s('hh*8') ).lpf(800).room(0.5)
+        - Melody: note('c3 eb3 g3 bb3').sound('sawtooth').delay(0.3)
+        - Full techno: setCps(120/60/4); stack( s('bd*4'), note('c2*2 eb2 g2').sound('bass').lpf(200), s('hh(5,8)') ).room(0.4)
+
+        - User: a basic house beat
+        - Assistant: stack(s('bd*4'), s('~ sd').e(2,4), s('hh*8').gain(0.6))
+
+        **BAD EXAMPLE (Do NOT do this):**
+        - note('c4 eb4 g4 bb4').scale('minor').sound('sine').slow(2).room(0.8).delay(0.2).
+
+        Your code must run error-free in Strudel REPL.`;
+
+        const workerUrl = 'https://geminiapikey.hutaraa.workers.dev'; // جایگزین با URL واقعی Worker
 
         const payload = {
             contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: {
-                parts: [{
-                    text: `Generate a COMPLETE, EXECUTABLE Strudel REPL code snippet for: "${userQuery}".
-                    - Output ONLY the pure code – NO explanations, comments, or markdown.
-                    - Use JS functions: s('mini-notation for sounds'), note('notes in mini-notation').scale('C:minor'), stack() for layers.
-                    - Include effects: .lpf(200-5000), .room(0-1), .delay(0-1).
-                    - Sync tempo: setcps(${this.synthParams.bpm / 60 / 4}).
-                    - Mini-notation rules: * for repeat (bd*4), / for slow ([c3 eb3]/2), ~ for rest, [ ] for groups, < > for choice, (n,k) for Euclidean (bd(3,8)), @ for elongate.
-                    - Examples:
-                    - Drum beat: stack( s('bd*4, sd(2,8)'), s('hh*8') ).lpf(800).room(0.5)
-                    - Melody: note('c3 eb3 g3 bb3').sound('sawtooth').delay(0.3)
-                    - Full techno: setCps(120/60/4); stack( s('bd*4'), note('c2*2 eb2 g2').sound('bass').lpf(200), s('hh(5,8)') ).room(0.4)
-                    - User: a basic house beat
-                    - Assistant: stack(s('bd*4'), s('~ sd').e(2,4), s('hh*8').gain(0.6))
-                    **BAD EXAMPLE (Do NOT do this):**
-                    - note('c4 eb4 g4 bb4').scale('minor').sound('sine').slow(2).room(0.8).delay(0.2).
-                    Your code must run error-free in Strudel REPL.`
-                }]
-            }
+            systemInstruction: { parts: [{ text: systemPrompt }] },
         };
 
         try {
-            const response = await fetch(PROXY_URL, {
+            const response = await fetch(workerUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ prompt: userQuery, bpm: this.synthParams.bpm })
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error?.message || `درخواست API با خطا مواجه شد: وضعیت ${response.status}`);
+                throw new Error(errorData.error || `Worker request failed with status ${response.status}`);
             }
 
             const result = await response.json();
-            const candidate = result.candidates?.[0];
-
-            if (candidate && candidate.content?.parts?.[0]?.text) {
-                let generatedCode = candidate.content.parts[0].text;
+            if (result.code) {
+                let generatedCode = result.code;
                 generatedCode = generatedCode.replace(/```javascript|```/g, "").trim();
                 codeEditor.value = generatedCode;
-                this.evaluateCode();
-                this.saveToHistory();
                 this.showNotification('الگوی جدید با موفقیت ساخته شد!', 'success');
+                this.evaluateCode();
             } else {
-                throw new Error('پاسخ نامعتبر از هوش مصنوعی دریافت شد.');
+                throw new Error('پاسخ نامعتبر از Worker دریافت شد.');
             }
         } catch (error) {
-            console.error('خطای تولید AI:', error);
+            console.error('AI Generation Error:', error);
             this.showNotification(`خطا در ساخت الگو: ${error.message}`, 'error');
         } finally {
             generateBtn.innerHTML = '<i class="las la-magic"></i> ساخت الگو';
@@ -731,24 +731,35 @@ class CyberStrudel {
 
     get presets() {
         return {
+            PsyBeat: `setCps(132/60/4)
+stack(s("jazz*16").struct("x ~ ~ ~ x ~ ~ ~ x ~ ~ ~ x ~ ~ ~").gain(0.8), s("sd*16").struct("~ ~ ~ ~ x ~ ~ ~ ~ ~ ~ ~ x ~ ~ ~").gain(0.3).room(0.3), s("hh*16").struct("x x x x x x x x x x x x x x x x").gain(0.4), s("jvbass*16").struct("~ x x x ~ x x x ~ x x x ~ x x x").gain(0.6).lpf(600))`,
+            ambient: `setCps(90/60/4)
+    stack(
+    n("0 2 4 7 9 4 2 1").scale("c5:minor").s("sine").gain(0.2).room(1.5).delay(0.5).room(3).rsize(2).orbit(2),
+ 
+    n("<0 2 3 5>/4").scale("c2:minor").s("sine").fm(0.5).attack(0.2).release(0.4).gain(0.4).room(3).rsize(2).orbit(2),
+    s("hh/2").gain("0.2 0.3").fast(2).degradeBy(0.3)
+    ).room(2.3).orbit(2)
+     .pianoroll()`,
+          
             a: `s('bd,bass(4,8)').jux(rev).gain(0.8)`,
             b: `s('bd,bass(4,8)').jux(rev).gain(0.8).lpf(800).lpq(1).room(0.5).delay(0.3)`,
-            c: `s('bd*2,hh(3,4),bass:[1 4](5,8,1)').jux(rev).attack(0.015).stack(s('~ sd')).gain(0.8)`,
-            d: `note("[c eb g <f bb>](3,8,<0 1>)".sub(12))
-.s("<sawtooth>/64")
-.lpf(sine.range(300,2000).slow(16))
-.lpa(0.005)
-.lpd(perlin.range(.02,.2))
-.lps(perlin.range(0,.5).slow(3))
-.lpq(sine.range(2,10).slow(32))
-.release(.5)
-.lpenv(perlin.range(1,8).slow(2))
-.ftype('24db')
-.room(1)
-.juxBy(.5,rev)
-.sometimes(add(note(12)))
-.stack(s("bd*2").bank('RolandTR909'))
-.gain(.5).fast(2)`,
+            c: `note("<[36]*4>")
+.s("supersaw")
+.penv("<.5 0 7 -2>*2").vib("4:.1")
+.phaser(1/4).delay(.25).fast(1.5)
+.fm(sine.range(100, 2000).slow(4))
+.fmsustain(1.5).fast(1.5)
+.fmenv("<exp lin>")
+.lpf(sine.range(100, 2000).slow(4))
+.fm("<1 2 1.5 1.61>")`,
+            d: `p1: n("<[c2 c3]*4 [bb1 bb2]*4 [f2 f3]*4 [eb2 eb3]*4>")  .scale("<c3:major>/2")
+  .s("supersaw")
+  .distort(0.7)
+  .superimpose((x) => x.detune("<0.5>"))
+  .lpenv(perlin.slow(3).range(1, 4))
+  .lpf(perlin.slow(2).range(100, 2000))
+  .gain(0.3);`,
             e: `s("hh*8").gain(".4!2 1 .4!2 1 .4 1").fast(2).layer(
   x => x.degrade().pan(0),
   x => x.undegrade().pan(1))`,
@@ -771,7 +782,23 @@ class CyberStrudel {
             g: `note("D#1!8").s("sine").penv(34).pdecay(.1).decay(.23).distort("8:.4")`,
             h: `sound("bd*2,<white pink brown>*8")
 .decay(.04).sustain(0).scope()`,
-            i: `note("c4 d4 e4 f4 g4 a4 b4 c5").sound('sine').gain(0.8)`,
+            i: `
+setDefaultVoicings('legacy')
+stack(
+  n("[0@2 ~, ~ [[1,2,3] ~]!2]")
+  .chord("<[Dm Am]!2 [F C]!2>/4")
+  .anchor("<[B3 G3]!2 [C4 B3]!2>/4")
+  .voicing().velocity(0.5)
+  ,
+  n("<[3@5.5 2@0.5 1@3 0@3] [3@3.5 [4 3 2 1 2]@2.5 1@3 0@3] [2@5.5 1@0.5 -3@6]!2>/4")
+  .scale("a4:minor")
+  
+).sound("sine").lpf(4000).clip(1)
+  .fm(.2)
+  .attack(0.1).release(0.1)
+  .room(1.5)
+  .cpm(64).gain(.6)
+  .pianoroll()`,
             j: `stack( n("<-4,0 5 2 1>*<2!3 4>")
 .scale("<C F>/8:pentatonic")
 .s("sine")
@@ -782,6 +809,7 @@ class CyberStrudel {
             l: `n("0 1 4 2 0 6 3 2").sound("jazz")`
         };
     }
+    
 
     setupMixCheckboxes() {
         const container = document.getElementById('mix-checkboxes');
@@ -904,8 +932,10 @@ class CyberStrudel {
 
     updateMixedCode() {
         const patterns = [];
-        
-        // First handle track patterns
+        const globals = new Set(); // برای globals مثل setDefaultVoicings
+        let patternCounter = 1; // برای نام‌گذاری p1:, p2:, ...
+
+        // === 1️⃣ Handle active sequencer tracks (wrap as pX:) ===
         this.getTracks().forEach(track => {
             if (this.mixedPatterns.tracks[track]) {
                 if (this.trackStates[track].muted || (Object.values(this.trackStates).some(state => state.solo) && !this.trackStates[track].solo)) {
@@ -916,54 +946,184 @@ class CyberStrudel {
                 const steps = this.sequencerState[track].slice(0, stepCount).map(active => active ? 'x' : '~').join(' ');
                 if (steps.includes('x')) {
                     const code = ['sawtooth', 'sine', 'triangle'].includes(sound)
-                        ? `note('c3').sound('${sound}').struct("${steps}").gain(0.8)`
-                        : `s("${sound}*${stepCount}").struct("${steps}").gain(0.8)`;
-                    patterns.push(code);
+                        ? `p${patternCounter}: note('c3').sound('${sound}').struct("${steps}").gain(0.8)`
+                        : `p${patternCounter}: s("${sound}*${stepCount}").struct("${steps}").gain(0.8)`;
+                    patterns.push({ code: code.trim(), source: `track_${track}` });
+                    patternCounter++;
                 }
             }
         });
 
-        // Then handle preset patterns
+        // === 2️⃣ Handle preset patterns ===
         Object.keys(this.mixedPatterns.presets).forEach(key => {
             if (this.mixedPatterns.presets[key]) {
-                patterns.push(this.presets[key]);
+                let cleanPreset = this.presets[key]
+                    .replace(/setCps\s*\([^)]*\)\s*;?/gi, '') // حذف setCps
+                    .replace(/;+\s*$/gm, '') // حذف semicolonها
+                    .trim();
+                // Extract globals
+                const globalMatch = cleanPreset.match(/^(setDefaultVoicings\s*\([^)]*\))\s*[\n;]*/);
+                if (globalMatch) {
+                    globals.add(globalMatch[1].trim());
+                    cleanPreset = cleanPreset.replace(globalMatch[0], '').trim();
+                }
+                // Clean trailing commas only at the end of logical blocks
+                const lines = cleanPreset.split('\n').filter(line => line.trim());
+                let finalCode = lines.join('\n');
+                if (lines.length > 0) {
+                    const isLabeled = lines.some(line => /^\s*p\d+:/i.test(line));
+                    if (!isLabeled) {
+                        // اگر غیر-labeled است، به pX: wrap کن و indentation حفظ کن
+                        finalCode = lines.map((line, i) => {
+                            const trimmedLine = line.trim();
+                            if (i === 0) {
+                                return `p${patternCounter}: ${trimmedLine}`;
+                            }
+                            const indentMatch = line.match(/^\s*/);
+                            const indent = indentMatch && indentMatch[0].length > 0 ? indentMatch[0] : '  ';
+                            return indent + trimmedLine;
+                        }).join('\n');
+                        patternCounter++;
+                    } else {
+                        // اگر labeled است، indentation حفظ کن
+                        finalCode = lines.map(line => {
+                            const trimmedLine = line.trim();
+                            if (trimmedLine.match(/^\s*p\d+:/i)) {
+                                return trimmedLine;
+                            }
+                            const indentMatch = line.match(/^\s*/);
+                            const indent = indentMatch && indentMatch[0].length > 0 ? indentMatch[0] : '  ';
+                            return indent + trimmedLine;
+                        }).join('\n');
+                        // به‌روزرسانی patternCounter
+                        const labels = lines
+                            .filter(line => line.match(/^\s*p\d+:/i))
+                            .map(line => parseInt(line.match(/p(\d+):/i)[1]));
+                        if (labels.length > 0) {
+                            patternCounter = Math.max(patternCounter, ...labels) + 1;
+                        }
+                    }
+                    // حذف trailing commas فقط در انتهای blockهای کامل
+                    finalCode = finalCode.replace(/,\s*$/gm, (match, offset, string) => {
+                        // فقط اگر خط بعدی وجود نداره یا خط بعدی شروع block جدیده (مثل pX: یا خالی)
+                        const nextLineIndex = string.indexOf('\n', offset + match.length);
+                        const nextLine = nextLineIndex !== -1 ? string.slice(nextLineIndex + 1).split('\n')[0] : '';
+                        if (!nextLine || nextLine.match(/^\s*p\d+:/i) || !nextLine.trim()) {
+                            return '';
+                        }
+                        return match;
+                    });
+                    patterns.push({ code: finalCode, source: `preset_${key}` });
+                }
             }
         });
 
-        // Finally handle saved patterns - using their exact saved code
+        // === 3️⃣ Handle saved patterns ===
         Object.keys(this.mixedPatterns.saved).forEach(name => {
             if (this.mixedPatterns.saved[name]) {
                 const pattern = this.savedPatterns.get(name);
                 if (pattern && pattern.code) {
-                    // Use the exact saved pattern code without modification
-                    patterns.push(pattern.code);
+                    let cleanCode = pattern.code
+                        .replace(/setCps\s*\([^)]*\)\s*;?/gi, '') // حذف setCps
+                        .replace(/;+\s*$/gm, '') // حذف semicolonها
+                        .trim();
+                    // Extract globals
+                    const globalMatch = cleanCode.match(/^(setDefaultVoicings\s*\([^)]*\))\s*[\n;]*/);
+                    if (globalMatch) {
+                        globals.add(globalMatch[1].trim());
+                        cleanCode = cleanCode.replace(globalMatch[0], '').trim();
+                    }
+                    // Split lines and preserve indentation
+                    const lines = cleanCode.split('\n').filter(line => line.trim());
+                    let finalCode = lines.join('\n');
+                    if (lines.length > 0) {
+                        const isLabeled = lines.some(line => /^\s*p\d+:/i.test(line));
+                        if (!isLabeled) {
+                            // اگر غیر-labeled است، به pX: wrap کن و indentation حفظ کن
+                            finalCode = lines.map((line, i) => {
+                                const trimmedLine = line.trim();
+                                if (i === 0) {
+                                    return `p${patternCounter}: ${trimmedLine}`;
+                                }
+                                const indentMatch = line.match(/^\s*/);
+                                const indent = indentMatch && indentMatch[0].length > 0 ? indentMatch[0] : '  ';
+                                return indent + trimmedLine;
+                            }).join('\n');
+                            patternCounter++;
+                        } else {
+                            // اگر labeled است، indentation حفظ کن
+                            finalCode = lines.map(line => {
+                                const trimmedLine = line.trim();
+                                if (trimmedLine.match(/^\s*p\d+:/i)) {
+                                    return trimmedLine;
+                                }
+                                const indentMatch = line.match(/^\s*/);
+                                const indent = indentMatch && indentMatch[0].length > 0 ? indentMatch[0] : '  ';
+                                return indent + trimmedLine;
+                            }).join('\n');
+                            // به‌روزرسانی patternCounter
+                            const labels = lines
+                                .filter(line => line.match(/^\s*p\d+:/i))
+                                .map(line => parseInt(line.match(/p(\d+):/i)[1]));
+                            if (labels.length > 0) {
+                                patternCounter = Math.max(patternCounter, ...labels) + 1;
+                            }
+                        }
+                        // حذف trailing commas فقط در انتهای blockهای کامل
+                        finalCode = finalCode.replace(/,\s*$/gm, (match, offset, string) => {
+                            const nextLineIndex = string.indexOf('\n', offset + match.length);
+                            const nextLine = nextLineIndex !== -1 ? string.slice(nextLineIndex + 1).split('\n')[0] : '';
+                            if (!nextLine || nextLine.match(/^\s*p\d+:/i) || !nextLine.trim()) {
+                                return '';
+                            }
+                            return match;
+                        });
+                        patterns.push({ code: finalCode, source: `saved_${name}` });
+                    }
                 }
             }
         });
 
-        // Combine all patterns
-        let newCode;
-        if (patterns.length === 1) {
-            // If there's only one pattern, don't wrap it in stack()
-            newCode = patterns[0];
-        } else if (patterns.length > 1) {
-            newCode = `stack(${patterns.join(', ')})`;
-        } else {
+        // === 4️⃣ Smart Combine ===
+        let newCode = '';
+        if (patterns.length === 0) {
             newCode = '';
+        } else if (patterns.length === 1) {
+            newCode = patterns[0].code;
+        } else {
+            // همه پترن‌ها به pX: تبدیل شدن، با \n\n join می‌شن
+            const globalSection = globals.size > 0 ? Array.from(globals).join('\n') + '\n\n' : '';
+            newCode = globalSection + patterns.map(p => p.code).join('\n\n');
         }
 
-        // Add BPM if enabled
+        // === 5️⃣ Add BPM globally ===
         if (this.synthParams.bpmEnabled && patterns.length > 0) {
             newCode = `setCps(${this.synthParams.bpm}/60/4)\n${newCode}`;
         }
 
+        // === 6️⃣ Debug log (remove in production) ===
+        console.log('Patterns:', patterns.map(p => ({
+            code: p.code.split('\n').map(line => line.substring(0, 50) + (line.length > 50 ? '...' : '')).join('\n'),
+            source: p.source
+        })));
+        console.log('Final Code:', newCode);
+
+        // === 7️⃣ Update & Play ===
         const codeEditor = document.getElementById('code-editor');
         if (codeEditor) codeEditor.value = newCode;
+
         if (newCode && this.isPlaying) {
-            this.evaluateCode();
+            try {
+                this.evaluateCode();
+            } catch (err) {
+                console.error('Evaluate error:', err);
+                this.showNotification('Error evaluating mixed code', 'error');
+            }
         } else if (!newCode) {
             this.stop();
             this.showNotification('No active patterns to play', 'error');
+        } else {
+            this.showNotification(`${patterns.length} patterns mixed successfully!`, 'success');
         }
     }
 
@@ -1446,9 +1606,10 @@ class CyberStrudel {
 
         // Don't modify the sequencer state when mixing
         // Just update the mixed code to include or remove this pattern
-        this.updateMixedCode();
         this.saveToHistory();
         this.saveToLocalStorage();
+        this.updatePatternBankUI(); // اضافه شد
+        this.updateMixedCode();     // اضافه شد
         this.showNotification(`Saved pattern "${name}" ${this.mixedPatterns.saved[name] ? 'mixed' : 'removed'}`, 'success');
     }
 
@@ -1576,7 +1737,9 @@ class CyberStrudel {
     }
 
     exportPatterns() {
-        const data = JSON.stringify([...this.savedPatterns], null, 2);
+        // Convert Map to array for JSON serialization
+        const arr = Array.from(this.savedPatterns.entries());
+        const data = JSON.stringify(arr, null, 2);
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1820,6 +1983,4 @@ class CyberStrudel {
     }
 }
 const app = new CyberStrudel();
-
-
 
